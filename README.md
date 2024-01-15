@@ -32,6 +32,7 @@ GET https://api.myapp.com/bitcoin/price/BTCEUR
   - `currencyPair`: Specifies the currency pair for historical data.
 - **Query Parameters:**
   - `time_frame`: Time frame for historical data (default `24_hours`).
+  - Supported time frames: `1_hour`, `6_hours`, `24_hours` and `168_hours`
   - `date`: Specific date for historical data (default today's date).
 - **Example Request:** 
 GET https://api.myapp.com/bitcoin/historical/BTCUSD?time_frame=24_hours&date=2024-01-15
