@@ -2,16 +2,10 @@
 
 namespace App\Contracts;
 
+use Illuminate\Database\Eloquent\Collection;
+
 interface BitcoinPriceRepositoryInterface
 {
-    /**
-     * Get the latest price for a given currency pair.
-     *
-     * @param string $currencyPair The currency pair for which to get the latest price.
-     * @return array|null Returns the latest price data as an array, or null if unavailable.
-     */
-    public function getLatestPrice(string $currencyPair): ?array;
-
     /**
      * Save the price data for a given currency pair.
      *
@@ -34,7 +28,15 @@ interface BitcoinPriceRepositoryInterface
      *
      * @param string $currencyPair The currency pair for which to get historical price data.
      * @param string $timeFrame The timeframe for the historical data.
-     * @return array|null Returns an array of historical price data, or null if unavailable.
      */
-    public function getHistoricalPriceData(string $currencyPair, string $timeFrame): ?array;
+    public function getHistoricalPriceData(string $currencyPair, string $timeFrame, ?string $date): Collection;
+
+    /**
+     * Get dynamic historical price data for a given currency pair and timeframe.
+     *
+     * @param string $currencyPair The currency pair for which to get historical price data.
+     * @param string $timeFrame The timeframe for the historical data (e.g., '1_hour', '6_hours', '24_hours').
+     * @return Collection Returns a collection of historical price data.
+     */
+    public function getDynamicHistoricalPriceData(string $currencyPair, string $timeFrame): Collection;
 }

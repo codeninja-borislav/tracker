@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Contracts\BitcoinPriceInterface;
 use App\Contracts\BitcoinPriceRepositoryInterface;
 use App\Contracts\NotificationServiceInterface;
 use App\Jobs\SendNotificationJob;
@@ -10,11 +11,12 @@ use App\Models\Subscription;
 class NotificationService implements NotificationServiceInterface
 {
 
-    public function __construct(protected BitcoinPriceRepositoryInterface $bitcoinPriceRepository)
-    {
-    }
+    public function __construct(
+        protected BitcoinPriceRepositoryInterface $bitcoinPriceRepository,
+        protected BitcoinPriceInterface $bitcoinPrice
+    ){}
 
-    public function checkAndNotifyUsers()
+    public function checkAndNotifyUsers(): void
     {
         $subscriptionGroups = Subscription::with('notifications')
             ->whereHas('notifications', function ($query) {
@@ -24,7 +26,7 @@ class NotificationService implements NotificationServiceInterface
             ->groupBy('currency_pair.value');
 
         foreach ($subscriptionGroups as $currencyPair => $subscriptions) {
-            $currentPrice = $this->bitcoinPriceRepository->getLatestPrice($currencyPair);
+            $currentPrice = $this->bitcoinPrice->getBitcoinPrice($currencyPair);
 
             if (!$currentPrice) {
                 continue;
@@ -36,10 +38,9 @@ class NotificationService implements NotificationServiceInterface
         }
     }
 
-    private function processSubscriptionNotifications($subscription, $currentPrice): void
-    {
+    private function processSubscriptionNotifications($subscription, $currentPrice): void {
         foreach ($subscription->notifications as $notification) {
-            if ($this->isConditionMet($subscription, $notification, $currentPrice)) {
+            if (!$notification->triggered && $this->isConditionMet($subscription, $notification, $currentPrice)) {
                 SendNotificationJob::dispatch($subscription, $notification, $currentPrice);
             }
         }
@@ -53,9 +54,9 @@ class NotificationService implements NotificationServiceInterface
 
         switch ($notification->notification_type->value) {
             case 'price_limit':
-                return $currentPrice['last_price'] >= $notification->threshold_value;
+                return $currentPrice->lastPrice >= $notification->threshold_value;
             case 'percentage_change':
-                return $this->checkPercentageChange($currentPrice['last_price'], $notification->threshold_value, $notification->time_interval, $subscription);
+                return $this->checkPercentageChange($currentPrice->lastPrice, $notification->threshold_value, $notification->time_interval, $subscription);
             default:
                 return false;
         }
@@ -63,7 +64,7 @@ class NotificationService implements NotificationServiceInterface
 
     private function checkPercentageChange($currentPrice, $thresholdPercentage, $timeInterval, $subscription): bool
     {
-        $historicalPrices = $this->bitcoinPriceRepository->getHistoricalPriceData($subscription->currency_pair->value, $timeInterval->value);
+        $historicalPrices = $this->bitcoinPriceRepository->getDynamicHistoricalPriceData($subscription->currency_pair->value, $timeInterval->value);
 
         if (!count($historicalPrices)) {
             return false;
@@ -71,6 +72,8 @@ class NotificationService implements NotificationServiceInterface
 
         $latestPrice = $currentPrice;
         $pastPrice = $historicalPrices[count($historicalPrices) - 1]->price;
+
+        echo $pastPrice;
 
         $percentageChange = (($latestPrice - $pastPrice) / $pastPrice) * 100;
 

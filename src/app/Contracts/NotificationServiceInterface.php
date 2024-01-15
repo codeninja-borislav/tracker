@@ -4,5 +4,5 @@ namespace App\Contracts;
 
 interface NotificationServiceInterface
 {
-    public function checkAndNotifyUsers();
+    public function checkAndNotifyUsers(): void;
 }

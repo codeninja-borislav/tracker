@@ -42,7 +42,7 @@ class PriceNotificationMail extends Mailable
             with: [
                 'email' => $this->subscription->email,
                 'type' => $this->notification->notification_type->name,
-                'currentPrice' => $this->currentPrice['last_price']
+                'currentPrice' => $this->currentPrice->lastPrice
             ],
         );
     }

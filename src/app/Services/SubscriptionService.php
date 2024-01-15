@@ -5,6 +5,8 @@ namespace App\Services;
 use App\Contracts\NotificationRepositoryInterface;
 use App\Contracts\SubscriptionRepositoryInterface;
 use App\Contracts\SubscriptionServiceInterface;
+use App\Models\Subscription;
+use Exception;
 use Illuminate\Support\Facades\DB;
 
 class SubscriptionService implements SubscriptionServiceInterface
@@ -14,7 +16,7 @@ class SubscriptionService implements SubscriptionServiceInterface
         protected NotificationRepositoryInterface $notificationRepo
     ){}
 
-    public function createSubscription(array $data)
+    public function createSubscription(array $data): Subscription
     {
         return DB::transaction(function () use ($data) {
             $subscription = $this->subscriptionRepo->create([
@@ -23,7 +25,7 @@ class SubscriptionService implements SubscriptionServiceInterface
             ]);
 
             if (!$subscription) {
-                return false;
+                throw new Exception('Failed to create subscription.');
             }
 
             $this->createNotificationsForSubscription($subscription, $data['notification_conditions'] ?? []);

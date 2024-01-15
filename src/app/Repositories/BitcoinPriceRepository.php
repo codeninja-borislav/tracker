@@ -2,64 +2,88 @@
 
 namespace App\Repositories;
 
-use App\Contracts\BitcoinPriceRepositoryInterface;
 use App\Contracts\BitcoinPriceInterface;
+use App\Contracts\BitcoinPriceRepositoryInterface;
 use App\Models\BitcoinPrice;
+use Carbon\Carbon;
+use Illuminate\Database\Eloquent\Collection;
 use InvalidArgumentException;
 
 class BitcoinPriceRepository implements BitcoinPriceRepositoryInterface
 {
-    public function __construct(protected BitcoinPriceInterface $bitcoinPriceService)
+    public function __construct(
+        private BitcoinPriceInterface $bitcoinPrice
+    ){}
+    public function savePriceData($currencyPair, $priceData): bool
     {
-    }
-
-    public function getLatestPrice($currencyPair)
-    {
-        return $this->bitcoinPriceService->getBitcoinPrice($currencyPair);
-    }
-
-    public function savePriceData($currencyPair, $priceData)
-    {
-        if (!isset($priceData['last_price'])) {
+        if (!isset($priceData->lastPrice)) {
             throw new InvalidArgumentException("Missing required key 'last_price'");
         }
 
-        return BitcoinPrice::create([
+        $bitcoinPrice = BitcoinPrice::create([
             'currency_pair' => $currencyPair,
-            'price' => $priceData['last_price'],
+            'price' => $priceData->lastPrice,
         ]);
+
+        return $bitcoinPrice !== null;
     }
 
-    public function fetchAndSavePriceData($currencyPair)
+    public function fetchAndSavePriceData($currencyPair): bool
     {
-        $priceData = $this->getLatestPrice($currencyPair);
+        $priceData = $this->bitcoinPrice->getBitcoinPrice($currencyPair);
         if ($priceData) {
             return $this->savePriceData($currencyPair, $priceData);
         }
-        return null;
+        return false;
     }
 
-    public function getHistoricalPriceData($currencyPair, $timeFrame)
+    public function getHistoricalPriceData($currencyPair, $timeFrame, ?string $date): Collection
     {
         $timePeriods = [
-            '1_hour' => 1,
-            '6_hours' => 6,
             '24_hours' => 24,
+            '168_hours' => 168
         ];
 
         if (!array_key_exists($timeFrame, $timePeriods)) {
             throw new InvalidArgumentException("Unsupported time interval: $timeFrame");
         }
 
-        // Calculate the start time based on the specified time interval
-        $startTime = now()->subHours($timePeriods[$timeFrame]);
+        $inputDate = $date ? Carbon::createFromFormat('Y-m-d', $date) : Carbon::now();
 
-        // Fetch historical price data within the specified time interval
+        if (!$inputDate) {
+            throw new InvalidArgumentException("Invalid date format: $date");
+        }
+
+        $startTime = $timeFrame === '24_hours' ?
+            $inputDate->copy()->startOfDay() :
+            $inputDate->copy()->subDays(7)->startOfDay();
+
+        $endTime = $inputDate->copy()->endOfDay();
+
+        return BitcoinPrice::where('currency_pair', $currencyPair)
+            ->whereBetween('created_at', [$startTime, $endTime])
+            ->orderBy('created_at', 'desc')
+            ->get();
+    }
+
+    public function getDynamicHistoricalPriceData($currencyPair, $timeFrame): Collection {
+        $timePeriods = [
+            '1_hour' => 1,
+            '6_hours' => 6,
+            '24_hours' => 24
+        ];
+
+        if (!array_key_exists($timeFrame, $timePeriods)) {
+            throw new InvalidArgumentException("Unsupported time interval: $timeFrame");
+        }
+
+        $hoursBack = $timePeriods[$timeFrame];
+        $startTime = Carbon::now()->subHours($hoursBack);
+
         return BitcoinPrice::where('currency_pair', $currencyPair)
             ->where('created_at', '>=', $startTime)
             ->orderBy('created_at', 'desc')
             ->get();
     }
-
 
 }

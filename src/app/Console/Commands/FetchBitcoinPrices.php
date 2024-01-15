@@ -2,6 +2,8 @@
 
 namespace App\Console\Commands;
 
+use App\Contracts\BitcoinPriceInterface;
+use App\Contracts\BitcoinPriceRepositoryInterface;
 use App\Enums\CurrencyPair;
 use App\Repositories\BitcoinPriceRepository;
 use Illuminate\Console\Command;
@@ -22,7 +24,10 @@ class FetchBitcoinPrices extends Command
      */
     protected $description = 'Fetches Bitcoin prices and stores them in the database';
 
-    public function __construct(private BitcoinPriceRepository $bitcoinPriceRepository)
+    public function __construct(
+        private BitcoinPriceRepositoryInterface $bitcoinPriceRepository,
+        private BitcoinPriceInterface $bitcoinPrice
+    )
     {
         parent::__construct();
     }
@@ -37,7 +42,7 @@ class FetchBitcoinPrices extends Command
         $currencyPairs = CurrencyPair::cases();
 
         foreach ($currencyPairs as $pair) {
-            $priceData = $this->bitcoinPriceRepository->getLatestPrice($pair->value);
+            $priceData = $this->bitcoinPrice->getBitcoinPrice($pair->value);
 
             if ($priceData) {
                 $this->bitcoinPriceRepository->savePriceData($pair->value, $priceData);

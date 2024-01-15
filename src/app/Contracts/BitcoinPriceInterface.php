@@ -2,6 +2,8 @@
 
 namespace App\Contracts;
 
+use App\DTO\BitcoinPriceDTO;
+
 interface BitcoinPriceInterface
 {
     /**
@@ -10,5 +12,5 @@ interface BitcoinPriceInterface
      * @param string $currencyPair The currency pair for which to get the Bitcoin price.
      * @return array|null Returns the Bitcoin price data as an array, or null if unavailable.
      */
-    public function getBitcoinPrice($currencyPair): ?array;
+    public function getBitcoinPrice(string $currencyPair):  ?BitcoinPriceDTO;
 }

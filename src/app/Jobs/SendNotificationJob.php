@@ -21,10 +21,10 @@ class SendNotificationJob implements ShouldQueue
     public function __construct(
         protected Subscription $subscription,
         protected Notification $notification,
-        protected $currentPrice
+        protected mixed $currentPrice
     ){}
 
-    public function handle()
+    public function handle(): void
     {
         try {
             Mail::to($this->subscription->email)->send(new PriceNotificationMail($this->subscription, $this->notification, $this->currentPrice));
