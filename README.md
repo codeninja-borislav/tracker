@@ -6,7 +6,7 @@
 This API provides services related to Bitcoin pricing and subscription management. It is ideal for applications that require real-time financial data and user subscription functionalities.
 
 ## Authentication
-The way the api endpoints are setup, no authentication is required, because this project is made for testing purposes. Shall you use it for production, authentication should be impolemented
+No authentication is required. This app has been made for testing purposes
 
 ### Get Current Bitcoin Price
 - **URL:** `/bitcoin/price/{currencyPair}`
