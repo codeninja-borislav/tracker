@@ -3,7 +3,13 @@
 # My tracker API Documentation
 
 ## Overview
-This API provides services related to Bitcoin pricing and subscription management. It is ideal for applications that require real-time financial data and user subscription functionalities.
+**This API was built using the following technologies:**
+- PHP 8.2
+- Laravel 10
+- MySQL
+- Docker
+
+It provides services related to Bitcoin pricing and subscription management. It is ideal for applications that require real-time financial data and user subscription functionalities.
 
 ## Authentication
 No authentication is required. This app has been made for testing purposes
