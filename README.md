@@ -1,6 +1,4 @@
-# tracker
-
-# My tracker API Documentation
+# Crypto tracker API Documentation
 
 ## Overview
 **This API was built using the following technologies:**
